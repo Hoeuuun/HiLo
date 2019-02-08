@@ -11,13 +11,29 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.util.Random;
+
 public class HiLo extends Application {
     private final int MAX_NUM = 100;
+    private final String RULES = "This program allows you to play a guessing game.\n I will think of a number between" +
+            " 1 and %d and you will guess until you get it.\n For each guess, I'll tell you whether the right answer is " +
+            "higher or lower your guess.\nI'm thinking of the number...";
 
-    private int randomNum;
+    private final String CORRECT_MSG = "%d is correct!\nClick \"yes\" to play again or \"no\" to quit";
+    private final String GUESS_LOWER_MSG = "guess lower - %d is%shigh";
+    private final String GUESS_HIGHER_MSG = "guess higher - %d is%slow";
+    private final String INPUT_ERROR_MSG = "%s is not a number!";
 
     private final int WINDOW_WIDTH = 600;
     private final int WINDOW_HEIGHT = 300;
+
+    private final Button yesButton = new Button("Yes");
+    private final Button noButton = new Button("No");
+
+    // Range to let the player know how close they are
+    private final int ERROR_THRESHOLD = 15;
+    private Random randomGen;
+    private int randomNum;
 
     private Text gameRules;
 
@@ -28,13 +44,16 @@ public class HiLo extends Application {
     private Text resultText = new Text("");
 
     private HBox buttonBox;
-    private final Button yesButton = new Button("Yes");
-    private final Button noButton = new Button("No");
 
     private GridPane gridPane;
 
     @Override
     public void start(Stage primaryStage) {
+        // generate a random number between 1-100, inclusive
+        randomGen = new Random();
+        // Initialize random number
+        initGame();
+
         // layout
         gridPane = new GridPane();
         gridPane.setStyle("-fx-background-color: beige");
@@ -42,17 +61,8 @@ public class HiLo extends Application {
         gridPane.setVgap(20);
 
         // display game rules
-        gameRules = new Text("This program allows you to play a guessing game.\n" +
-                "I will think of a number between 1 and " + MAX_NUM +
-                " and will allow you to guess until you get it.\n" +
-                "For each guess, I will tell you whether the right answer is " +
-                "higher or lower than your guess.\n" +
-                "I'm thinking of a number...\n");
+        gameRules = new Text(String.format(RULES, MAX_NUM));
         gridPane.add(gameRules, 1, 1, 2, 2);
-
-        // generate a random number between 1-100, inclusive
-        randomNum = (int)(Math.random() * MAX_NUM + 1);
-        System.out.println("randomNum is: " + randomNum);
 
         // prompt user to input guess in text field, pressing "enter" to submit the guess
         guessFieldLabel = new Text("Your guess? ");
@@ -89,29 +99,37 @@ public class HiLo extends Application {
 
     // Determines if guess is correct, too high, or too low
     private void processGuessField(ActionEvent event) {
-        int userGuess = Integer.parseInt(guessField.getText());
+        int userGuess;
+
+        // Tries to parse user's input into a guessed integer
+        try {
+            userGuess = Integer.parseInt(guessField.getText());
+        } catch (NumberFormatException e) {
+            setResultText(String.format(INPUT_ERROR_MSG, guessField.getText()), Color.DARKRED);
+            return;
+        } finally {
+            guessField.clear();
+        }
 
         if (userGuess == randomNum) { // if user chooses correctly, ask if want to replay, show yes/no buttons
-            resultText.setText(userGuess + " is correct!\nClick \"yes\" to play again or \"no\" to quit");
-            resultText.setFill(Color.GREEN);
+            setResultText(String.format(CORRECT_MSG, userGuess), Color.GREEN);
             toggleButtons(true);
-
         }
         else if (userGuess > randomNum) {
-            resultText.setText("lower - " + userGuess + " is too high");
-            resultText.setFill(Color.BLUE);
+            setResultText( String.format(GUESS_LOWER_MSG, userGuess, getAdverbForResponse(userGuess, randomNum)),
+                    Color.RED);
         }
         else {
-            resultText.setText("higher - " + userGuess + " is too low");
-            resultText.setFill(Color.RED);
+            setResultText( String.format(GUESS_HIGHER_MSG, userGuess, getAdverbForResponse(userGuess, randomNum)),
+                    Color.BLUE);
         }
-
-        guessField.clear();
     }
 
     // Resets the game when the "yes" button is clicked and hides buttons
     private void handleYesButton(ActionEvent event) {
+        initGame();
         guessField.clear();
+        setResultText("", Color.BLACK);
         toggleButtons(false);
     }
 
@@ -127,8 +145,30 @@ public class HiLo extends Application {
         noButton.setVisible(status);
     }
 
+    // Returns proper adverb when user's guess is too off
+    private String getAdverbForResponse(int userGuess, int randomNum) {
+        if (Math.abs(userGuess - randomNum) > ERROR_THRESHOLD) {
+            return " too ";
+        } else {
+            return " ";
+        }
+    }
+
+    private void setResultText(String msg, Color clr) {
+        resultText.setText(msg);
+        resultText.setFill(clr);
+    }
+
+    public int generateRandomNumber(int bound) {
+        return randomGen.nextInt(bound) + 1;
+    }
+
+    private void initGame() {
+        randomNum = generateRandomNumber(MAX_NUM);
+        System.out.println("randomNum is: " + randomNum);
+    }
+
     public static void main(String[] args) {
         launch(args);
     }
-
 }
