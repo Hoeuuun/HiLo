@@ -51,7 +51,8 @@ public class HiLo extends Application {
     public void start(Stage primaryStage) {
         // generate a random number between 1-100, inclusive
         randomGen = new Random();
-        // Initialize random number
+
+        // initialize random number
         initGame();
 
         // layout
@@ -72,9 +73,8 @@ public class HiLo extends Application {
         textBox.setAlignment(Pos.CENTER);
         gridPane.add(textBox, 2, 3, 1, 1);
 
-        // buttons
-        yesButton.setOnAction(this::handleYesButton);
-        noButton.setOnAction(this::handleNoButton);
+        yesButton.setOnAction(this::handleReplayButton);
+        noButton.setOnAction(this::handleReplayButton);
 
         // buttons layout
         buttonBox = new HBox(yesButton, noButton);
@@ -113,6 +113,7 @@ public class HiLo extends Application {
 
         if (userGuess == randomNum) { // if user chooses correctly, ask if want to replay, show yes/no buttons
             setResultText(String.format(CORRECT_MSG, userGuess), Color.GREEN);
+            guessField.setEditable(false);
             toggleButtons(true);
         }
         else if (userGuess > randomNum) {
@@ -125,18 +126,19 @@ public class HiLo extends Application {
         }
     }
 
-    // Resets the game when the "yes" button is clicked and hides buttons
-    private void handleYesButton(ActionEvent event) {
-        initGame();
-        guessField.clear();
-        setResultText("", Color.BLACK);
-        toggleButtons(false);
-    }
-
-    // Quits the game when the "no" button is clicked
-    private void handleNoButton(ActionEvent event) {
-        Platform.exit();
-        System.exit(0);
+    private void handleReplayButton(ActionEvent event) {
+        if(event.getSource()==yesButton) {
+            initGame();
+            guessField.clear();
+            setResultText("", Color.BLACK);
+            toggleButtons(false);
+            //allow the user text box to accept guesses again
+            guessField.setEditable(true);
+        }
+        else if (event.getSource()==noButton) {
+            Platform.exit();
+            System.exit(0);
+        }
     }
 
     // Displays buttons only when selection is allowed (status is true), i.e., when user guesses correctly
